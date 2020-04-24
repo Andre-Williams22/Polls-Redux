@@ -30,8 +30,13 @@ ALLOWED_HOSTS = []
 
 # Application definition
 
+LOGIN_REDIRECT_URL = '/polls/'
+LOGOUT_REDIRECT_URL = '/polls/'
+
+
 INSTALLED_APPS = [
     'polls.apps.PollsConfig',
+    'registration.apps.RegistrationConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
