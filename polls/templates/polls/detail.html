@@ -1,11 +1,9 @@
 {% extends 'polls/base.html' %}
 {% block content %}
-<h1>{{ question.question_text }}</h1>
-{% if question.author %}
-    <p>Author: {{ question.author.username }}</p>
+    <h1>{{ question.question_text }}</h1>
+    {% if question.author %}
+        <p>Author: {{ question.author.username }}</p>
 {% endif %}
-
-
 {% if request.user == question.author %}
     <!-- choice creation form -->
     <h3>Create a new Choice!</h3>
