@@ -1,36 +1,13 @@
 from django.shortcuts import render, get_object_or_404
-from django.http import HttpResponse, Http404, HttpResponseRedirect 
-from django.template import loader 
+from django.http import HttpResponse, Http404, HttpResponseRedirect
+from django.template import loader
 from django.urls import reverse, reverse_lazy
 from django.views import generic
-from django.contrib.auth.mixins import LoginRequiredMixin 
-from django.contrib.auth.forms import UserCreationForm
-from django.views.generic import CreateView
+from django.utils import timezone
+from django.contrib.auth.mixins import LoginRequiredMixin
 
-from .models import Choice, Question
-from .models import *
-from .forms import *
-from .forms import QuestionCreateForm
-
-class QuestionCreateView(LoginRequiredMixin, generic.edit.CreateView):
-    login_url = reverse_lazy('login')
-
-    def get(self, request, *args, **kwargs):
-        context = {
-          'form': QuestionCreateForm()
-        }
-        return render(request, 'polls/create.html', context)
-
-    def post(self, request, *args, **kwargs):
-        form = QuestionCreateForm(request.POST)
-        if form.is_valid:
-            question = form.save(commit=False) # don't save the question yet
-            question.author = request.user
-            question.save()
-            return HttpResponseRedirect(
-                reverse('polls:detail', args=[question.id]))
-        # else if form is not valid
-        return render(request, 'polls/create.html', { 'form': form })
+from .forms import QuestionCreateForm, ChoiceCreateForm
+from .models import Question, Choice
 
 
 def index(request):
@@ -69,8 +46,13 @@ class IndexView(generic.ListView):
     context_object_name = 'latest_question_list'
 
     def get_queryset(self):
-        """Return the last five published questions."""
-        return Question.objects.order_by('-pub_date')[:5]
+        """
+        Return the last five published questions (not including those set to be
+        published in the future).
+        """
+        return Question.objects.filter(
+            pub_date__lte=timezone.now()
+        ).order_by('-pub_date')[:5]
 
 
 class DetailView(generic.DetailView):
@@ -91,33 +73,33 @@ class DetailView(generic.DetailView):
             return HttpResponseRedirect(reverse('polls:detail', args=[pk]))
         # else if form is not valid
         context = {
-          'choice_form': form,
-          'question': Question.objects.get(pk=pk)
+            'choice_form': form,
+            'question': Question.objects.get(pk=pk)
         }
         return render(request, 'polls/detail.html', context)
-
 
 
 class ResultsView(generic.DetailView):
     model = Question
     template_name = 'polls/results.html'
 
-# def results(request, question_id):
-#     question = get_object_or_404(Question, pk=question_id)
-#     return render(request, 'polls/results.html', {'question': question})
 
-# Code with Functions 
+class QuestionCreateView(LoginRequiredMixin, generic.edit.CreateView):
+    login_url = reverse_lazy('login')
 
-# def index(request):
-#     latest_question_list = Question.objects.order_by('-pub_date')[:5]
-#     context = {'latest_question_list': latest_question_list}
-#     return render(request, 'polls/index.html', context)
+    def get(self, request, *args, **kwargs):
+        context = {
+            'form': QuestionCreateForm()
+        }
+        return render(request, 'polls/create.html', context)
 
-# def detail(request, question_id):
-    
-#     question = get_object_or_404(Question, pk=question_id)
-#     return render(request, 'polls/detail.html', {'question': question})
-
-# def results(request, question_id):
-#     question = get_object_or_404(Question, pk=question_id)
-#     return render(request, 'polls/results.html', {'question':question})
+    def post(self, request, *args, **kwargs):
+        form = QuestionCreateForm(request.POST)
+        if form.is_valid:
+            question = form.save(commit=False)  # don't save the question yet
+            question.author = request.user
+            question.save()
+            return HttpResponseRedirect(
+                reverse('polls:detail', args=[question.id]))
+        # else if form is not valid
+        return render(request, 'polls/create.html', {'form': form})
